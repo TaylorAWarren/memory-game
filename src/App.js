@@ -1,6 +1,7 @@
 import React from "react";
 import "./App.css";
 import Card from "./components/Card.js";
+import axios from "axios";
 
 
 
@@ -8,7 +9,7 @@ class App extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      //idCount: 20,
+      idCount: 20,
       howBadAreYou: 0,
       clickNum: 0,
       clickedId: 0,
@@ -17,7 +18,7 @@ class App extends React.Component {
       clickedSrc2: "",
       numOfCorrectPairs: 0,
       numOfPairs: 10,
-      cards: [{
+      /*cards: [{
         id: 0,
         pic: 'BlackPanther',
         imgSrc: './img/black-panther.jpg',
@@ -171,7 +172,7 @@ class App extends React.Component {
         flipped: false,
         trueFlip: false
 
-      }]
+      }]*/
     }
   }
   componentDidUpdate() {
@@ -266,6 +267,42 @@ class App extends React.Component {
     }
   }
 
+  componentDidMount() {
+    //this.handleDuplicate();
+    //public marvelAPI key: 2803538e776609801c76f2cee2dc30f1
+    axios.get("https://gateway.marvel.com/v1/public/characters", {
+      params: {
+        apikey: "2803538e776609801c76f2cee2dc30f1",
+        orderBy: "-modified",
+        limit: 10
+      }
+    })
+      .then((response) => {
+        // handle success
+        console.log(response.data.data.results);
+        let characters = response.data.data.results.map((c, i) => {
+          return {
+            id: i,
+            name: c.name,
+            pic: c.name,
+            imgSrc: `${c.thumbnail.path}.${c.thumbnail.extension}`,
+            flipped: false,
+            trueFlip: false,
+          }
+        })
+        //this.setState({ cards: newCards, idCount: inCount, numOfPairs: (this.state.cards.length) });
+        this.setState({ cards: characters });
+        this.handleDuplicate();
+      })
+      .catch(function (error) {
+        // handle error
+        console.log(error);
+      })
+      .finally(function () {
+        // always executed
+      });
+  }
+
 
 
   handleShuffle = () => {
@@ -274,24 +311,42 @@ class App extends React.Component {
     })
     let randomCards = [];
     for (let i = 0; i < this.state.cards.length; i++) {
-      let jimothy = Math.round(Math.random() * (copiedCards.length - 1));
-      // randomCards[i] = copiedCards[jimothy];
-      // copiedCards.splice(jimothy, 1);
-      randomCards.push(copiedCards.splice(jimothy, 1)[0]);
+      let randomNum = Math.round(Math.random() * (copiedCards.length - 1));
+      // randomCards[i] = copiedCards[randomNum];
+      // copiedCards.splice(randomNum, 1);
+      //console.log(copiedCards);
+      randomCards.push(copiedCards.splice(randomNum, 1)[0]);
       randomCards[i] = {
         ...randomCards[i],
         id: i
       }
     }
+    //console.log(randomCards);
 
     this.setState({ cards: randomCards, howBadAreYou: 0, numOfCorrectPairs: 0 });
   }
 
+  handleDuplicate = () => {
+    let inCount = this.state.idCount
+    let newCards = this.state.cards.map(card => {
+      return {
+        ...card,
+      }
+    })
+    this.state.cards.forEach(card => {
+      newCards[newCards.length] = { ...card, id: inCount };
+      inCount++;
+    });
+    //return newCards, inCount;
+
+    this.setState({ cards: newCards, idCount: inCount, numOfPairs: (this.state.cards.length) });
+  }
+
   render() {
-    const cardGrid = this.state.cards.map(card => {
+    const cardGrid = ((this.state.hasOwnProperty('cards')) ? this.state.cards.map(card => {
       return (<Card key={card.id} card={card} handleClick={e =>
         this.handleClick(e, card.id, card.flipped, card.trueFlip)} />)
-    });
+    }) : (<h1> Gathering Card Images </h1>))
 
     return (
       <div className="App">
